@@ -24,5 +24,9 @@
         BorderThickness="1"
         GridLinesVisibility="All"
         IsReadOnly="True"
-        ItemsSource="{Binding DataGridObjects}" />
+        ItemsSource="{Binding DataGridObjects}">
+        <DataGrid.Columns>
+            <DataGridTextColumn Binding="{ReflectionBinding Value.FirstName}" Header="Name" />
+        </DataGrid.Columns>
+    </DataGrid>
 </UserControl>
