@@ -9,18 +9,20 @@ namespace AvaloniaApplication.ViewModels;
 
 public partial class MainViewModel : ViewModelBase
 {
-    public ObservableCollection<Person> People { get; }
+    private ObservableCollection<Person> _people;
 
     [ObservableProperty]
     private DataGridCollectionView _dataGridObjects;
 
-    private readonly DispatcherTimer _disTimer = new DispatcherTimer();
+    private readonly DispatcherTimer _disTimer = new();
 
-    private int count;
+    private int _count;
+
+    private int _max = 4; // Change this to 6 to see even more odd behavior, like duplicate items
 
     public MainViewModel()
     {
-        People = new ObservableCollection<Person>
+        _people = new ObservableCollection<Person>
         {
             new Person("Bpb", "Trea"),
             new Person("Neil", "Armstrong"),
@@ -29,7 +31,7 @@ public partial class MainViewModel : ViewModelBase
             new Person("Fem", "Fem", false)
         };
 
-        DataGridObjects = new DataGridCollectionView(People)
+        DataGridObjects = new DataGridCollectionView(_people)
         {
             Filter = item => ((Person)item).Male == true
         };
@@ -39,41 +41,36 @@ public partial class MainViewModel : ViewModelBase
         _disTimer.Start();
     }
 
-    private async void _disTimer_Tick(object? sender, EventArgs e)
+    private void _disTimer_Tick(object? sender, EventArgs e)
     {
-        var max = 4; // Change this to 6 to see even more odd behavior, like duplicate items
-
         var rand = RandomString(10);
 
-        if (count < 4)
+        if (_count < 4)
         {
             // Update item matching the filter
-            await Dispatcher.UIThread.InvokeAsync(() => People[count] = new Person(rand, rand, true));
+            _people[_count] = new Person(rand, rand, true);
         }
-        else if (count == 4)
+        else if (_count == 4)
         {
             // Update item not matching the filter
-            await Dispatcher.UIThread.InvokeAsync(() => People[count] = new Person(rand, rand, false));
+            // Bug, this causes items to be removed from the DataGridCollectionView
+            _people[_count] = new Person(rand, rand, false);
         }
-        else if (count == 5)
+        else if (_count == 5)
         {
             // Add new item matching the filter
-            await Dispatcher.UIThread.InvokeAsync(() => People.Add(new Person(rand, rand, true)));
+            _people.Add(new Person(rand, rand, true));
         }
-        else if (count == 6)
+        else if (_count == 6)
         {
             // Add new item not matching the filter
-            await Dispatcher.UIThread.InvokeAsync(() => People.Add(new Person(rand, rand, false)));
+            _people.Add(new Person(rand, rand, false));
         }
 
-        if (count == max)
-        {
-            count = 0;
-        }
+        if (_count == _max)
+            _count = 0;
         else
-        {
-            count++;
-        }
+            _count++;
     }
 
     private static Random random = new Random();
