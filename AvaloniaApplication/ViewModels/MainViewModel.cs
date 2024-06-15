@@ -1,53 +1,38 @@
 ﻿using Avalonia.Collections;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
-using KubeUI.Client.Informer;
-using Swordfish.NET.Collections;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Xml.Linq;
 
 namespace AvaloniaApplication.ViewModels;
 
 public partial class MainViewModel : ViewModelBase
 {
-    //public ObservableCollection<Person> People { get; }
-
-    public ConcurrentObservableDictionary<NamespacedName, Person> People2 { get; } = [];
+    public ObservableCollection<Person> People { get; }
 
     [ObservableProperty]
     private DataGridCollectionView _dataGridObjects;
 
-    private DispatcherTimer _disTimer = new DispatcherTimer();
+    private readonly DispatcherTimer _disTimer = new DispatcherTimer();
 
     private int count;
 
     public MainViewModel()
     {
-        //var people = new List<Person>
-        //{
-        //    new Person("Neil", "Armstrong"),
-        //    new Person("Buzz", "Lightyear"),
-        //    new Person("James", "Kirk"),
-        //    new Person("Fem", "Fem", false)
-        //};
-
-        //People = new ObservableCollection<Person>(people);
-
-        People2 = new ConcurrentObservableDictionary<NamespacedName, Person>()
+        People = new ObservableCollection<Person>
         {
-            new KeyValuePair<NamespacedName, Person>(new NamespacedName("pp0"), new Person("pp0", "pp0")),
-            new KeyValuePair<NamespacedName, Person>(new NamespacedName("pp1"), new Person("pp1", "pp1")),
-            new KeyValuePair<NamespacedName, Person>(new NamespacedName("pp2"), new Person("pp2", "pp1")),
-            new KeyValuePair<NamespacedName, Person>(new NamespacedName("pp3"), new Person("pp3", "pp1")),
-            new KeyValuePair<NamespacedName, Person>(new NamespacedName("pp4"), new Person("pp4", "pp1", false)),
+            new Person("Bpb", "Trea"),
+            new Person("Neil", "Armstrong"),
+            new Person("Buzz", "Lightyear"),
+            new Person("James", "Kirk"),
+            new Person("Fem", "Fem", false)
         };
 
-        DataGridObjects = new DataGridCollectionView(People2);
-
-        DataGridObjects.Filter = item => ((KeyValuePair<NamespacedName, Person>)item).Value.Male == true;
+        DataGridObjects = new DataGridCollectionView(People)
+        {
+            Filter = item => ((Person)item).Male == true
+        };
 
         _disTimer.Interval = TimeSpan.FromSeconds(1);
         _disTimer.Tick += _disTimer_Tick; ;
@@ -56,33 +41,40 @@ public partial class MainViewModel : ViewModelBase
 
     private async void _disTimer_Tick(object? sender, EventArgs e)
     {
-        var rand = RandomString(5);
+        var max = 4; // Change this to 6 to see even more odd behavior, like duplicate items
+
+        var rand = RandomString(10);
 
         if (count < 4)
         {
-            await Dispatcher.UIThread.InvokeAsync(() => People2[new NamespacedName("pp" + count)] = new Person(rand, rand, true));
+            // Update item matching the filter
+            await Dispatcher.UIThread.InvokeAsync(() => People[count] = new Person(rand, rand, true));
         }
         else if (count == 4)
         {
-            await Dispatcher.UIThread.InvokeAsync(() => People2[new NamespacedName("pp" + count)] = new Person(rand, rand, false));
+            // Update item not matching the filter
+            await Dispatcher.UIThread.InvokeAsync(() => People[count] = new Person(rand, rand, false));
         }
         else if (count == 5)
         {
-            //await Dispatcher.UIThread.InvokeAsync(() => People2[new NamespacedName(rand)] = new Person(rand, rand, true));
+            // Add new item matching the filter
+            await Dispatcher.UIThread.InvokeAsync(() => People.Add(new Person(rand, rand, true)));
         }
         else if (count == 6)
         {
-            //await Dispatcher.UIThread.InvokeAsync(() => People2[new NamespacedName(rand)] = new Person(rand, rand, false));
+            // Add new item not matching the filter
+            await Dispatcher.UIThread.InvokeAsync(() => People.Add(new Person(rand, rand, false)));
         }
 
-        count++;
-
-        if (count == 6)
+        if (count == max)
         {
             count = 0;
         }
+        else
+        {
+            count++;
+        }
     }
-
 
     private static Random random = new Random();
 
@@ -91,24 +83,5 @@ public partial class MainViewModel : ViewModelBase
         const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         return new string(Enumerable.Repeat(chars, length)
             .Select(s => s[random.Next(s.Length)]).ToArray());
-    }
-}
-
-public partial class Person : ObservableObject
-{
-    [ObservableProperty]
-    private string _firstName;
-
-    [ObservableProperty]
-    public string _lastName;
-
-    [ObservableProperty]
-    public bool _male;
-
-    public Person(string firstName, string lastName, bool male = true)
-    {
-        FirstName = firstName;
-        LastName = lastName;
-        Male = male;
     }
 }
